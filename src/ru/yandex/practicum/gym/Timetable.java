@@ -50,9 +50,34 @@ public class Timetable {
     }
 
     public LinkedHashMap<Coach, Integer> getCountByCoaches() {
+        if (timetable == null) {
+            return new LinkedHashMap<>();
+        }
 
+        HashMap<Coach, Integer> countByCoach = new HashMap<>(); //список тренер->кол-во тренировок
 
+        for (TreeMap<TimeOfDay,ArrayList<TrainingSession>> dayTimeTable : timetable.values()) {
+            for (ArrayList<TrainingSession> trainingSessions : dayTimeTable.values()) {
+                for (TrainingSession trainingSession : trainingSessions) {
+                    Coach coach = trainingSession.getCoach();
+                    Integer count = countByCoach.getOrDefault(coach, 0) + 1;
+                    countByCoach.put(coach, count);
+                }
+            }
+        }
 
-    
+        ArrayList<CounterOfTrainings> counterOfTrainings = new ArrayList<>(); //вспомогательный список CounterOfTrainings для сортировки
+        for (Map.Entry<Coach, Integer> entry : countByCoach.entrySet()) {
+            counterOfTrainings.add(new CounterOfTrainings(entry.getKey(), entry.getValue()));
+        }
+
+        Collections.sort(counterOfTrainings);
+
+        //Запишем в LinkedHashMap с сохранением порядка
+        LinkedHashMap<Coach, Integer> coachTrainingsCountsList = new LinkedHashMap<>();
+        for (CounterOfTrainings counterOfTraining : counterOfTrainings) {
+            coachTrainingsCountsList.put(counterOfTraining.getCoach(), counterOfTraining.getCount());
+        }
+        return coachTrainingsCountsList;
     }
 }
