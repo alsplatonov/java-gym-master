@@ -4,7 +4,7 @@ import java.util.*;
 
 public class Timetable {
 
-    private HashMap<DayOfWeek, TreeMap<TimeOfDay, ArrayList<TrainingSession>>> timetable;
+    private Map<DayOfWeek, TreeMap<TimeOfDay, ArrayList<TrainingSession>>> timetable;
 
     public void addNewTrainingSession(TrainingSession trainingSession) {
         //сохраняем занятие в расписании
@@ -16,17 +16,11 @@ public class Timetable {
             timetable = new HashMap<>();
         }
         //список тренировок за конкретный день
-        TreeMap<TimeOfDay, ArrayList<TrainingSession>> dayTimeTable = timetable.get(dayOfWeek);
-        if (dayTimeTable == null) {
-            dayTimeTable = new TreeMap<>();
-            timetable.put(dayOfWeek, dayTimeTable);
-        }
+        TreeMap<TimeOfDay, ArrayList<TrainingSession>> dayTimeTable =
+                timetable.computeIfAbsent(dayOfWeek, k -> new TreeMap<>());
         //список тренировок за конкретное время timeOfDay за день dayOfWeek
-        ArrayList<TrainingSession> trainingSessionsAtTime = dayTimeTable.get(timeOfDay);
-        if (trainingSessionsAtTime == null) {
-            trainingSessionsAtTime = new ArrayList<>();
-            dayTimeTable.put(timeOfDay, trainingSessionsAtTime);
-        }
+        ArrayList<TrainingSession> trainingSessionsAtTime =
+                dayTimeTable.computeIfAbsent(timeOfDay, k -> new ArrayList<>());
         trainingSessionsAtTime.add(trainingSession);
 
     }
@@ -60,8 +54,7 @@ public class Timetable {
             for (ArrayList<TrainingSession> trainingSessions : dayTimeTable.values()) {
                 for (TrainingSession trainingSession : trainingSessions) {
                     Coach coach = trainingSession.getCoach();
-                    Integer count = countByCoach.getOrDefault(coach, 0) + 1;
-                    countByCoach.put(coach, count);
+                    countByCoach.compute(coach, (k, v) -> v == null ? 1 : v + 1);
                 }
             }
         }
