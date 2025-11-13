@@ -4,17 +4,74 @@ import java.util.*;
 
 public class Timetable {
 
-    private /* как это хранить??? */ timetable;
+    private Map<DayOfWeek, TreeMap<TimeOfDay, ArrayList<TrainingSession>>> timetable;
 
     public void addNewTrainingSession(TrainingSession trainingSession) {
         //сохраняем занятие в расписании
+
+        DayOfWeek dayOfWeek = trainingSession.getDayOfWeek();
+        TimeOfDay timeOfDay = trainingSession.getTimeOfDay();
+
+        if (timetable == null) { //если расписание еще не создано
+            timetable = new HashMap<>();
+        }
+        //список тренировок за конкретный день
+        TreeMap<TimeOfDay, ArrayList<TrainingSession>> dayTimeTable =
+                timetable.computeIfAbsent(dayOfWeek, k -> new TreeMap<>());
+        //список тренировок за конкретное время timeOfDay за день dayOfWeek
+        ArrayList<TrainingSession> trainingSessionsAtTime =
+                dayTimeTable.computeIfAbsent(timeOfDay, k -> new ArrayList<>());
+        trainingSessionsAtTime.add(trainingSession);
+
     }
 
-    public /* непонятно, что возвращать */ getTrainingSessionsForDay(DayOfWeek dayOfWeek) {
-        //как реализовать, тоже непонятно, но сложность должна быть О(1)
+    public TreeMap<TimeOfDay, ArrayList<TrainingSession>> getTrainingSessionsForDay(DayOfWeek dayOfWeek) {
+        //сложность должна быть О(1)
+        if (timetable == null) {
+            return new TreeMap<>();
+        }
+        return timetable.getOrDefault(dayOfWeek, new TreeMap<>());
+
     }
 
-    public /* непонятно, что возвращать */ getTrainingSessionsForDayAndTime(DayOfWeek dayOfWeek, TimeOfDay timeOfDay) {
-        //как реализовать, тоже непонятно, но сложность должна быть О(1)
+    public ArrayList<TrainingSession> getTrainingSessionsForDayAndTime(DayOfWeek dayOfWeek, TimeOfDay timeOfDay) {
+        //сложность должна быть О(1)
+        TreeMap<TimeOfDay, ArrayList<TrainingSession>> dayTreeMap = timetable.get(dayOfWeek);
+        if (dayTreeMap == null) {
+            return new ArrayList<>();
+        }
+        return dayTreeMap.getOrDefault(timeOfDay, new ArrayList<>());
+    }
+
+    public LinkedHashMap<Coach, Integer> getCountByCoaches() {
+        if (timetable == null) {
+            return new LinkedHashMap<>();
+        }
+
+        HashMap<Coach, Integer> countByCoach = new HashMap<>(); //список тренер->кол-во тренировок
+
+        for (TreeMap<TimeOfDay, ArrayList<TrainingSession>> dayTimeTable : timetable.values()) {
+            for (ArrayList<TrainingSession> trainingSessions : dayTimeTable.values()) {
+                for (TrainingSession trainingSession : trainingSessions) {
+                    Coach coach = trainingSession.getCoach();
+                    countByCoach.compute(coach, (k, v) -> v == null ? 1 : v + 1);
+                }
+            }
+        }
+
+        //вспомогательный список CounterOfTrainings для сортировки
+        ArrayList<CounterOfTrainings> counterOfTrainings = new ArrayList<>();
+        for (Map.Entry<Coach, Integer> entry : countByCoach.entrySet()) {
+            counterOfTrainings.add(new CounterOfTrainings(entry.getKey(), entry.getValue()));
+        }
+
+        Collections.sort(counterOfTrainings);
+
+        //Запишем в LinkedHashMap с сохранением порядка
+        LinkedHashMap<Coach, Integer> coachTrainingsCountsList = new LinkedHashMap<>();
+        for (CounterOfTrainings counterOfTraining : counterOfTrainings) {
+            coachTrainingsCountsList.put(counterOfTraining.getCoach(), counterOfTraining.getCount());
+        }
+        return coachTrainingsCountsList;
     }
 }
